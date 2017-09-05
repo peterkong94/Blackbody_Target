@@ -25,7 +25,6 @@ void dispError(double error){
   //this is to clear the previous printed value to prevent overlap
   lcd.setCursor(13, 3);
   lcd.print("     ");
-  
   lcd.setCursor(7, 1);
   lcd.print("Err: ");
   lcd.setCursor(13, 1);
