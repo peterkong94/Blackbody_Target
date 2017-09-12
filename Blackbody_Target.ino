@@ -3,6 +3,9 @@
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 int heatPin = 9;           // the PWM pin the LED is attached to
 int coolPin = 10;    // how bright the LED is
+#define TEMPUP_PIN               6  // temp up
+#define TEMPDOWN_PIN             7  // temp down 
+
 #include <math.h>
 const int temperaturePin = 2;
 const int setTempPin = 3;
@@ -26,8 +29,12 @@ void setup() {
 }
 
 void loop() {
-  // handle button
+  //handle button
   eventHandle();
+
+  //Serial.print(digitalRead(TEMPUP_PIN));
+  //Serial.print("/");
+  dispSetTemp(setTemp);
   // put your main code here, to run repeatedly:
   currentTemp = (getCurrentTemp() + prevTemp)/2;
   dispCurrentTemp(currentTemp);

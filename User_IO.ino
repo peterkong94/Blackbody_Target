@@ -1,5 +1,5 @@
-#define BUTTON1_PIN               2  // temp up
-#define BUTTON2_PIN               3  // temp down 
+#define TEMPUP_PIN               6  // temp up
+#define TEMPDOWN_PIN             7  // temp down 
 
 //this event handler needs to detect button press and button relase 
 //when button pressed do setTemp++/-- 
@@ -32,12 +32,13 @@ class ButtonHandler {
 ButtonHandler::ButtonHandler(int p)
 : pin(p)
 {
+  setTemp--;
 }
 
 void ButtonHandler::init()
 {
   pinMode(pin, INPUT);
-  digitalWrite(pin, HIGH); // pull-up
+  //digitalWrite(pin, LOW); // pull-up
   was_pressed = false;
   pressed_counter = 0;
 }
@@ -45,22 +46,23 @@ void ButtonHandler::init()
 int ButtonHandler::handle()
 {
   int event;
-  int now_pressed = !digitalRead(pin);
+  int now_pressed = digitalRead(pin);
 
-  if (!now_pressed && was_pressed)
+  if (!now_pressed && was_pressed){
     // handle release event
     event = EV_RELEASED;
+    Serial.print("released");
+  } 
   else
     event = EV_NONE;
 
   // update press running duration
   if (now_pressed){
     ++pressed_counter;
-    setTemp = pressed_counter;
   }
   else
     pressed_counter = 0;
-
+    setTemp += pressed_counter;
   // remember state, and we're done
   was_pressed = now_pressed;
   return event;
@@ -69,8 +71,8 @@ int ButtonHandler::handle()
 //////////////////////////////////////////////////////////////////////////////
 
 // Instantiate button objects
-ButtonHandler button1(BUTTON1_PIN);
-ButtonHandler button2(BUTTON2_PIN);
+ButtonHandler button1(TEMPUP_PIN);
+ButtonHandler button2(TEMPDOWN_PIN);
 
 void print_event(const char* button_name, int event)
 {
