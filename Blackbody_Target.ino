@@ -29,7 +29,7 @@ MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO);
 //Define Variables we'll be connecting to
 double Setpoint, Input, Output;
 //Specify the links and initial tuning parameters
-PID myPID(&Input, &Output, &Setpoint,2,5,1, DIRECT);
+PID myPID(&Input, &Output, &Setpoint,8,15,3, DIRECT);
 
 void setup() {
   // put your setup code here, to run once

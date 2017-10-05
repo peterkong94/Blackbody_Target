@@ -22,11 +22,13 @@ void PIDCalc(double currentTemp, int setTemp)
 
 void TempCon()
 {
-  int OnTime = 20*Output; 
+  int OnTime = Output; 
   digitalWrite(heatPin, HIGH); 
   delay(OnTime); 
-  digitalWrite(heatPin, LOW); 
-  delay(5000 - OnTime); 
+  if(OnTime != 255){
+    digitalWrite(heatPin, LOW); 
+    delay(255 - OnTime); 
+  }
 }
 
 /* this source file include methods for the Temp control algritham
