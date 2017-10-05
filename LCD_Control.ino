@@ -1,6 +1,6 @@
 void LCDSetup(){
-  // set up the LCD's number of columns and rows:
-  lcd.begin(20, 4);
+  lcd.init();                      // initialize the lcd   
+  lcd.backlight();
   // Print a message to the LCD.
   lcd.print("current temp: ");
    // set up the LCD's number of columns and rows:

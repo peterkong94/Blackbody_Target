@@ -1,6 +1,7 @@
 //this is the main source file 
-#include <LiquidCrystal.h>
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x3F,20,4);  // set the LCD address to 0x3F for a 20 chars and 4 line display
 int heatPin = 9;           // the PWM pin the LED is attached to
 int coolPin = 10;    // how bright the LED is
 #define TEMPUP_PIN               6  // temp up
@@ -11,7 +12,7 @@ int coolPin = 10;    // how bright the LED is
 const int temperaturePin = 2;
 const int setTempPin = 3;
 int tempTemp = 0;
-int setTemp = 15; 
+int setTemp = 57; 
 double currentTemp = 0; 
 double prevTemp = 0; 
 
@@ -41,7 +42,7 @@ void setup() {
   //pinMode(setTempPin, INPUT);
   prevTemp = getCurrentTemp();
   // event init
-  eventInit();
+  //eventInit();
   thermoInit();
   PIDSetup();
   
@@ -50,21 +51,24 @@ void setup() {
 
 void loop() {
   //handle button
-  eventHandle();
+  //eventHandle();
 
   //Serial.print(digitalRead(TEMPUP_PIN));
   //Serial.print("/");
   dispSetTemp(setTemp);
   // put your main code here, to run repeatedly:
-  currentTemp = (thermocouple.readCelsius() + prevTemp)/2;
+  //Serial.println(thermocouple.readCelsius());
+  currentTemp = thermocouple.readCelsius();  
+  delay(500); 
   dispCurrentTemp(currentTemp);
+   
   
   int error = currentTemp - setTemp;
   dispError(error); 
   
   //for averagying from last loop to reduce spikes, could be elimiated 
   prevTemp = currentTemp; 
-  delay(500); 
+
   digitalWrite(heatPin, LOW); 
   digitalWrite(coolPin, LOW);
 
