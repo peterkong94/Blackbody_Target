@@ -12,12 +12,21 @@ void PIDSetup()
   myPID.SetMode(AUTOMATIC);
 }
 
-void PIDTempControl(double currentTemp, int setTemp)
+void PIDCalc(double currentTemp, int setTemp)
 {
   Setpoint = setTemp;
   Input = currentTemp;
   myPID.Compute();
-  analogWrite(3,Output);
+  //analogWrite(3,Output);
+}
+
+void TempCon()
+{
+  int OnTime = 20*Output; 
+  digitalWrite(heatPin, HIGH); 
+  delay(OnTime); 
+  digitalWrite(heatPin, LOW); 
+  delay(5000 - OnTime); 
 }
 
 /* this source file include methods for the Temp control algritham

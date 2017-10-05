@@ -61,7 +61,9 @@ void loop() {
   currentTemp = thermocouple.readCelsius();  
   delay(500); 
   dispCurrentTemp(currentTemp);
-  PIDTempControl(currentTemp, setTemp);
+  PIDCalc(currentTemp, setTemp);
+
+  
   
   int error = currentTemp - setTemp;
   dispError(error); 
@@ -70,9 +72,6 @@ void loop() {
   prevTemp = currentTemp; 
 
   disPWM(Output);
-
-  digitalWrite(heatPin, LOW); 
-  digitalWrite(coolPin, LOW);
-
-
+  TempCon(); 
+  
 }
