@@ -33,7 +33,11 @@ void dispError(double error){
 
 //the PWM is the control signal to the TE-COOLER driver
 void disPWM(int controlS){
-  if(controlS > 0){ 
+    lcd.setCursor(7, 3);
+    lcd.print("PMW: ");
+    lcd.setCursor(13, 3);
+    lcd.print(controlS);
+  /*if(controlS > 0){ 
     lcd.setCursor(5, 3);
     lcd.print("PMW: -");
     lcd.setCursor(11, 3);
@@ -44,5 +48,5 @@ void disPWM(int controlS){
     lcd.print("PMW: +");
     lcd.setCursor(11, 3);
     lcd.print(controlS);
-  }
+  }*/
 }

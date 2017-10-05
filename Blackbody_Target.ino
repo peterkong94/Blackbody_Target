@@ -12,7 +12,7 @@ int coolPin = 10;    // how bright the LED is
 const int temperaturePin = 2;
 const int setTempPin = 3;
 int tempTemp = 0;
-int setTemp = 57; 
+int setTemp = 40; 
 double currentTemp = 0; 
 double prevTemp = 0; 
 
@@ -61,13 +61,15 @@ void loop() {
   currentTemp = thermocouple.readCelsius();  
   delay(500); 
   dispCurrentTemp(currentTemp);
-   
+  PIDTempControl(currentTemp, setTemp);
   
   int error = currentTemp - setTemp;
   dispError(error); 
   
   //for averagying from last loop to reduce spikes, could be elimiated 
   prevTemp = currentTemp; 
+
+  disPWM(Output);
 
   digitalWrite(heatPin, LOW); 
   digitalWrite(coolPin, LOW);

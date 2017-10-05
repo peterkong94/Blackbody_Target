@@ -5,16 +5,17 @@
  ********************************************************/
 void PIDSetup()
 {
-  Input = analogRead(0);
-  Setpoint = 100;
+  Input = thermocouple.readCelsius();
+  Setpoint = 0;
 
   //turn the PID on
   myPID.SetMode(AUTOMATIC);
 }
 
-void PIDTempControl()
+void PIDTempControl(double currentTemp, int setTemp)
 {
-  Input = analogRead(0);
+  Setpoint = setTemp;
+  Input = currentTemp;
   myPID.Compute();
   analogWrite(3,Output);
 }
