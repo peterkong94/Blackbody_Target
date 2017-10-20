@@ -4,12 +4,12 @@ However if we decide on using thermocouples this code could get more complex
 */
 
 //get the current temperature from the sensor 
-double getCurrentTemp() {
+double getCurrentTemp(int tempPin) {
   float voltage = 0, degreesC, degreesF;
   
   //do a averaging of 5 ilterations to inscrease accurecy 
   for (int i = 0; i < 5; i++){
-    voltage += analogRead(temperaturePin)*0.005; //*0.005 to convert the 0 to 1034 analog read to 0 to 5 volts 
+    voltage += analogRead(tempPin)*0.005; //*0.005 to convert the 0 to 1034 analog read to 0 to 5 volts 
     delay(10);
   }
   
