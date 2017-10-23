@@ -1,33 +1,53 @@
-/********************************************************
- * PID Basic Example
- * Reading analog input 0 to control analog PWM output 3
- * This is only for reference and not called right now 
- ********************************************************/
-void PIDSetup()
+ /*    pidSetup
+ Description:	Set the input and setpoint for the PID loop.
+				Turn the PID on. 
+ Input:			thermocouple object to read the input from 
+ Output:		none
+ */
+void pidSetup(MAX6675 thermocouple)
 {
-  Input = thermocouple.readCelsius();
-  Setpoint = 0;
+	// set the input to the thermocouple inputted and setpoint to 0
+	input = thermocouple.readCelsius();
+	setpoint = 0;
 
-  //turn the PID on
-  myPID.SetMode(AUTOMATIC);
+	//turn the PID on
+	myPID.SetMode(AUTOMATIC);
 }
 
-void PIDCalc(double currentTemp, int setTemp)
+/*    pidCalc
+Description:	Calculate the PID to determine how much current
+				to send to the heating and cooling elements
+Input:			currentTemp -> the current temperature of the blackbody
+				setTemp     -> the set temperature from the user
+Output:			none
+*/
+void pidCalc(double currentTemp, int setTemp)
 {
-  Setpoint = setTemp;
-  Input = currentTemp;
+  setpoint = setTemp;
+  input = currentTemp;
+  // output variable will be recomputed  
   myPID.Compute();
   //analogWrite(3,Output);
 }
 
-void TempCon()
+/*    tempCon
+Description:	Create a large scale PWM given the output of the PID.
+				For example, if the output is 133, then the pin will be
+				high for 133ms and low for 122ms. Overall, the heat pin
+				will be high for output time. Then it will be low for 
+				255 - output time. 
+Input:			none			 
+Output:			none
+*/
+void tempCon()
 {
-  int OnTime = Output; 
-  digitalWrite(heatPin, HIGH); 
-  delay(OnTime); 
-  if(OnTime != 255){
-    digitalWrite(heatPin, LOW); 
-    delay(255 - OnTime); 
+
+	int OnTime = output; 
+	digitalWrite(HEAT_PIN, HIGH); 
+	delay(OnTime); 
+	if(OnTime != 255){
+		digitalWrite(HEAT_PIN, LOW); 
+		delay(255 - OnTime); 
   }
 }
 
