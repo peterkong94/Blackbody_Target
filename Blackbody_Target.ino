@@ -4,9 +4,8 @@
 LiquidCrystal_I2C lcd(0x3F,20,4);  // set the LCD address to 0x3F for a 20 chars and 4 line display
 int heatPin = 9;           // the PWM pin the LED is attached to
 int coolPin = 10;    // how bright the LED is
-#define TEMPUP_PIN               6  // temp up
-#define TEMPDOWN_PIN             7  // temp down 
-;
+
+#include "user_input.h"
 
 #include <math.h>
 const int temperaturePin = 2;
@@ -35,23 +34,18 @@ void setup() {
   // put your setup code here, to run once
   //setup LCD display
   LCDSetup();
-  //set TE-COOLER output pin 
   pinMode(heatPin, OUTPUT);
   pinMode(coolPin, OUTPUT);
-  //pinMode(temperaturePin, INPUT);
-  //pinMode(setTempPin, INPUT);
   prevTemp = getCurrentTemp();
-  // event init
-  //eventInit();
   thermoInit();
   PIDSetup();
+
+  user_input_setup();
   
   Serial.begin(9600);
 }
 
 void loop() {
-  //handle button
-  //eventHandle();
 
   //Serial.print(digitalRead(TEMPUP_PIN));
   //Serial.print("/");

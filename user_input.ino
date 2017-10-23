@@ -1,7 +1,6 @@
-#import "Arduino.h"
-
-const int change_temp_pin = 3;
-const int change_mode_pin = 4;
+//Pin 2,3, 18, 19, 20, 21 are the interrupts pin on Mega 
+const int change_temp_pin = 2;
+const int change_mode_pin = 3;
 int tempButtonState, modeButtonState;
 const int PRESSED = LOW;
 
@@ -11,12 +10,7 @@ enum temperature_modes {
   ERROR_MD  
 };
 
-void user_input_setup()
-{
-  pinMode(change_temp_pin, INPUT);
-  pinMode(change_mode_pin, INPUT);
-  
-}
+
 
 temperature_modes change_modes(temperature_modes original_mode)
 {
@@ -81,4 +75,11 @@ temperature_modes user_input_loop(temperature_modes temp_mode, int& rel_temp, in
   return temp_mode; 
 }
 
-
+void user_input_setup()
+{
+  //this is the interrupt setup routine 
+  pinMode(change_temp_pin, INPUT_PULLUP);
+  pinMode(change_mode_pin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(change_temp_pin), user_input_loop, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(change_mode_pin), user_input_loop, CHANGE);
+}
