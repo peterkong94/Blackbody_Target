@@ -9,6 +9,7 @@ void userInputSetup()
 	pinMode(DECREASE_TEMP_PIN, INPUT);
 	pinMode(INCREASE_TEMP_PIN, INPUT);
 	pinMode(CHANGE_MODE_PIN, INPUT);
+	pinMode(CHANGE_TARGET_PIN, INPUT);
 }
 
 /*    changeModes
@@ -37,6 +38,32 @@ int changeModes(int original_mode)
 	}
 }
 
+/*    changeTarget
+Description:	Given the original target (heated or cooled),
+                we return the other target.
+Input:			int orignal_target -> the target currently being adjusted
+Output:			The other target
+*/
+int changeTarget(int original_target)
+{
+	// if the target is currently the heated target
+	if (original_target == HEATED_TARGET)
+	{
+		// return the cooled target
+		return COOLED_TARGET;
+	}
+	// if the mode is currently the cooled target
+	else if (original_target == COOLED_TARGET)
+	{
+		// return heated target
+		return HEATED_TARGET;
+	}
+	else // should not occur, but check 
+	{
+		return ERROR_MD;
+	}
+}
+
 /*    userInputLoop
 Description:	Checks the user input and changes the temperature 
 				accordingly. The setpoint temperature can be increased or
@@ -58,12 +85,10 @@ void userInputLoop(int& tempMode, int& relTemp, int& absTemp)
 	// the user wants to change the mode
 	if (modeButton == PRESSED)
 	{
-	        Serial.println("Temperature Mode has been changed!");
-        	tempMode = changeModes(tempMode);
+	    //Serial.println("Temperature Mode has been changed!");
+        tempMode = changeModes(tempMode);
 	}
-
        
-
 	// the current mode is relative temp
 	if (tempMode == REL_TEMP)
 	{
@@ -136,4 +161,37 @@ void setSetpoint(int& setTemp, int tempMode, int relTemp, int curAmbTemp, int ab
 		Serial.println("Error! Incorrect Temperature Mode");
 	}
 
+}
+
+/*   userInputLoopTargetChange
+Description:	Given the original target (heated or cooled),
+                we assign the other target.
+Input:			int orignal_target -> the target currently being adjusted
+Output:			nothing ( BUT a reference variable is changed)
+*/
+void userInputLoopTargetChange(int& original_target)
+{
+	// read user input
+	int changeTargetButton = digitalRead(CHANGE_TARGET_PIN);
+
+	// if the user wants to change the target to modify
+	if (changeTargetButton == PRESSED) {
+	
+		// if the target is currently the heated target
+		if (original_target == HEATED_TARGET)
+		{
+			// return the cooled target
+			original_target = COOLED_TARGET;
+		}
+		// if the mode is currently the cooled target
+		else if (original_target == COOLED_TARGET)
+		{
+			// return heated target
+			original_target = HEATED_TARGET;
+		}
+		else // should not occur, but check 
+		{
+			original_target = ERROR_MD;
+		}
+	}
 }

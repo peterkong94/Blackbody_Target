@@ -1,3 +1,5 @@
+/*
+
 #define TEMPUP_PIN               6  // temp up
 #define TEMPDOWN_PIN             7  // temp down 
 
@@ -99,3 +101,5 @@ void eventHandle()
   print_event("2", event2);
 
 }
+
+*/

@@ -4,14 +4,17 @@
  Input:			thermocouple object to read the input from 
  Output:		none
  */
-void pidSetup(MAX6675 thermocouple)
+void pidSetup()
 {
 	// set the input to the thermocouple inputted and setpoint to 0
-	input = thermocouple.readCelsius();
-	setpoint = 0;
+	input_heat = thermocouple_blackbody_heated.readCelsius();
+	input_cool = thermocouple_blackbody_cooled.readCelsius();
+	setpoint_heat = 0;
+	setpoint_cool = 0;
 
 	//turn the PID on
-	myPID.SetMode(AUTOMATIC);
+	PIDHeatedTarget.SetMode(AUTOMATIC);
+	PIDCooledTarget.SetMode(AUTOMATIC);
 }
 
 /*    pidCalc
@@ -21,13 +24,18 @@ Input:			currentTemp -> the current temperature of the blackbody
 				setTemp     -> the set temperature from the user
 Output:			none
 */
-void pidCalc(double currentTemp, int setTemp)
+void pidCalc()
 {
-  setpoint = setTemp;
-  input = currentTemp;
+	input_heat = blackbodies[HEATED_TARGET].currentTemp;
+	setpoint_heat = blackbodies[HEATED_TARGET].setTemp;
+	input_cool = blackbodies[COOLED_TARGET].currentTemp;
+	setpoint_cool = blackbodies[COOLED_TARGET].setTemp;
+
   // output variable will be recomputed  
-  myPID.Compute();
+	PIDCooledTarget.Compute();
+	PIDHeatedTarget.Compute();
   //analogWrite(3,Output);
+
 }
 
 /*    tempCon
@@ -42,13 +50,22 @@ Output:			none
 void tempCon()
 {
 
-	int OnTime = output; 
+	int OnTimeHeat = output_heat; 
+	int OnTimeCool = output_cool;
+
 	digitalWrite(HEAT_PIN, HIGH); 
-	delay(OnTime); 
-	if(OnTime != 255){
-		digitalWrite(HEAT_PIN, LOW); 
-		delay(255 - OnTime); 
-  }
+	delay(OnTimeHeat); 
+	if (OnTimeHeat != 255) {
+		digitalWrite(HEAT_PIN, LOW);
+		delay(255 - OnTimeHeat);
+	}
+	
+	digitalWrite(COOL_PIN, HIGH);
+	delay(OnTimeCool);
+	if (OnTimeCool != 255) {
+		digitalWrite(COOL_PIN, LOW);
+		delay(255 - OnTimeCool);
+	}
 }
 
 /* this source file include methods for the Temp control algritham
