@@ -3,6 +3,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <math.h>
 #include "max6675.h"
+#include "Adafruit_MAX31856.h"
 #include "PID_v1.h"
 #include "PID_AutoTune_v0.h"
 
@@ -15,7 +16,7 @@ const int ABS_TEMP = 1;
 const int REL_TEMP = 2;
 const int ERROR_MD = 3;
 // This value is the predefined setpoint temperature
-const int PREDEFINED_TEMP_SETPOINT = 23;
+const double PREDEFINED_TEMP_SETPOINT = 23;
 // tuning variables for the PID loop
 const int TUNING_P = 8;
 const int TUNING_I = 15;
@@ -48,6 +49,10 @@ const int THERMO_DO_AMB_PIN = 13;
 const int THERMO_CS_AMB_PIN = 14;
 const int THERMO_CLK_AMB_PIN = 15;
 
+//target thermocouple SDO % SDI pin
+const int THERMO_DI_PIN_1 = 12;
+const int THERMO_CS_PIN_1 = 26;
+
 // Global Variables
 //Define PID Variables
 double setpoint, input, output;
@@ -58,6 +63,9 @@ int setTemp;             // temperature set by the user in absolute temperature
 int sysTempMode;         // the temperature mode of the system is initiliazed to absolute temperature
 int relativeTemp;        // initialize relative temp to zero
 int absoluteTemp;        // initialized in setup
+
+Adafruit_MAX31856 Thermo_1(THERMO_CS_PIN_1, THERMO_DI_PIN_1, THERMO_DO_BB_PIN, THERMO_CLK_BB_PIN);
+
 
 // Global objects
 // LCD Display Object
@@ -80,6 +88,8 @@ void setup()
   pinMode(COOL_PIN, OUTPUT);
   // initialize the thermocouples
   thermoInit();  // what does this do? Do we only need it once no matter how many thermocouples there are?
+  Thermo_1.begin();
+  Thermo_1.setThermocoupleType(MAX31856_TCTYPE_T);
   // set the input and setpoint of the PID loop
   pidSetup(thermocouple_blackbody);
 
@@ -99,11 +109,16 @@ void setup()
 void loop() {
   
   // local variables 
-  int error;       // difference between blackbody temperature and the setpoint
+  double error;       // difference between blackbody temperature and the setpoint
         // the current temperature of the blackbody
-  double currentTemp = thermocouple_blackbody.readCelsius();
-  // current ambient temperature
-  int currentAmbientTemp = int(thermocouple_ambient.readCelsius());
+  //double currentTemp = thermocouple_blackbody.readCelsius();
+   double currentTemp1 = Thermo_1.readThermocoupleTemperature();
+   double currentTemp2 = thermocouple_blackbody.readCelsius();
+   double currentTemp = (currentTemp1 + currentTemp2)/2;
+   dispCurrentTemp(currentTemp);
+   delay(1000);
+   // current ambient temperature
+  double currentAmbientTemp = thermocouple_ambient.readCelsius();
         currentAmbientTemp = 25;
         
   // get the user input for the temperature
