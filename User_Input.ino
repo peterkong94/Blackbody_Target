@@ -102,7 +102,7 @@ void userInputLoop(int& tempMode, int& relTemp, int& absTemp)
 		else if (tempIncrease == NOT_PRESSED && tempDecrease == PRESSED)
 		{
 			relTemp = relTemp - 1;
-                        Serial.println("Decrease temperature!");
+                       Serial.println("Decrease temperature!");
 		}
 	}
 	// the current mode is absolute temp

@@ -3,6 +3,8 @@ since we are currently using a temperautre chip this part of the programe is qui
 However if we decide on using thermocouples this code could get more complex
 */
 
+/*
+
 //get the current temperature from the sensor 
 double getCurrentTemp(int tempPin) {
   float voltage = 0, degreesC, degreesF;
@@ -22,3 +24,4 @@ double getCurrentTemp(int tempPin) {
   return degreesC; 
 
 }
+*/

@@ -7,14 +7,14 @@
 void pidSetup()
 {
 	// set the input to the thermocouple inputted and setpoint to 0
-	input_heat = thermocouple_blackbody_heated.readCelsius();
 	input_cool = thermocouple_blackbody_cooled.readCelsius();
-	setpoint_heat = 0;
-	setpoint_cool = 0;
+	setpoint_cool = PREDEFINED_TEMP_SETPOINT_COOLED;
 
 	//turn the PID on
-	PIDHeatedTarget.SetMode(AUTOMATIC);
 	PIDCooledTarget.SetMode(AUTOMATIC);
+
+	// start serial
+	Serial.begin(9600);
 }
 
 /*    pidCalc
@@ -26,16 +26,12 @@ Output:			none
 */
 void pidCalc()
 {
-	input_heat = blackbodies[HEATED_TARGET].currentTemp;
-	setpoint_heat = blackbodies[HEATED_TARGET].setTemp;
 	input_cool = blackbodies[COOLED_TARGET].currentTemp;
 	setpoint_cool = blackbodies[COOLED_TARGET].setTemp;
 
   // output variable will be recomputed  
 	PIDCooledTarget.Compute();
-	PIDHeatedTarget.Compute();
-  //analogWrite(3,Output);
-
+	
 }
 
 /*    tempCon
@@ -50,16 +46,9 @@ Output:			none
 void tempCon()
 {
 
-	int OnTimeHeat = output_heat; 
+	//int OnTimeHeat = output_heat; 
 	int OnTimeCool = output_cool;
 
-	digitalWrite(HEAT_PIN, HIGH); 
-	delay(OnTimeHeat); 
-	if (OnTimeHeat != 255) {
-		digitalWrite(HEAT_PIN, LOW);
-		delay(255 - OnTimeHeat);
-	}
-	
 	digitalWrite(COOL_PIN, HIGH);
 	delay(OnTimeCool);
 	if (OnTimeCool != 255) {
@@ -68,23 +57,5 @@ void tempCon()
 	}
 }
 
-/* this source file include methods for the Temp control algritham
-two functions are currently in here:
-1. simple porportional control: used for now for fast result, should be discarded once we figure out the PID algrithm 
-2. PID control: our ultimate goal, however needs more research and testin
-*/
 
-/*this is our simple porportional control methode before we figure out the PID stuffs 
-void pControl(int error){
-  //6 is the proportional mutiplayer that I set, we can play around with it 
-  int controlS = error*6;
-  if(controlS > 0){ 
-    digitalWrite(heatPin, LOW); 
-    analogWrite(coolPin, controlS); 
-  }else{ 
-    digitalWrite(coolPin, LOW); 
-    analogWrite(heatPin, controlS); 
-  }
-}
-*/
 

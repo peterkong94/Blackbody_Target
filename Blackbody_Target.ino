@@ -16,8 +16,8 @@
 // structure defining the data for a target
 struct target
 {
-	int currentTemp;    // current temperature of the blackbody
-	int prevTemp;       // previous temperature of the blackbody
+	float currentTemp;    // current temperature of the blackbody
+	float prevTemp;       // previous temperature of the blackbody
 	int setTemp;        // temperature set by the user in absolute temperature
 	int absoluteTemp;   // initialized in setup 
 	int relativeTemp;   // initialize relative temp to zero
@@ -37,9 +37,6 @@ const int ERROR_MD = 3;
 const int PREDEFINED_TEMP_SETPOINT_HEATED = 23;
 const int PREDEFINED_TEMP_SETPOINT_COOLED = 19;
 // tuning variables for the PID loop
-const int TUNING_P_HEATED = 8;
-const int TUNING_I_HEATED = 15;
-const int TUNING_D_HEATED = 3;
 const int TUNING_P_COOLED = 8;
 const int TUNING_I_COOLED = 15;
 const int TUNING_D_COOLED = 3;
@@ -51,7 +48,7 @@ const int COOLED_TARGET = 1;
 // PIN Allocation
 // Create Fritzing Pinout Diagram
 // output pins
-const int HEAT_PIN = 9;                // output to heater
+
 const int COOL_PIN = 10;               // output to cooling element
 
 // input temperature pins
@@ -66,9 +63,6 @@ const int CHANGE_TARGET_PIN = 22;      // input to change which target we adjust
 
 //setup for thermoCouple Pins Amps 
 // thermocouple pins for blackbody temperature
-const int THERMO_DO_BB_PIN_HEATED = 4;
-const int THERMO_CS_BB_PIN_HEATED = 5;
-const int THERMO_CLK_BB_PIN_HEATED = 6;
 
 const int THERMO_DO_BB_PIN_COOLED = 30;
 const int THERMO_CS_BB_PIN_COOLED = 31;
@@ -81,7 +75,7 @@ const int THERMO_CLK_AMB_PIN = 15;
 
 // Global Variables
 //Define PID Variables
-double setpoint_cool, setpoint_heat, input_cool, input_heat, output_heat, output_cool;
+double setpoint_cool, input_cool, output_cool;
 
 // current target whom data is being manipulated
 target blackbodies[2];
@@ -91,13 +85,12 @@ int currentTarget;
 // LCD Display Object
 LiquidCrystal_I2C lcd(0x3F,20,4);  // set the LCD address to 0x3F for a 20 chars and 4 line display
 // Thermocouple Objects
-MAX6675 thermocouple_blackbody_heated(THERMO_CLK_BB_PIN_HEATED, THERMO_CS_BB_PIN_HEATED, THERMO_DO_BB_PIN_HEATED);
 MAX6675 thermocouple_blackbody_cooled(THERMO_CLK_BB_PIN_COOLED, THERMO_CS_BB_PIN_COOLED, THERMO_DO_BB_PIN_COOLED);
 MAX6675 thermocouple_ambient(THERMO_CLK_AMB_PIN, THERMO_CS_AMB_PIN, THERMO_DO_AMB_PIN);
 // Specify the links and initial tuning parameters
 // PID Object
 PID PIDCooledTarget(&input_cool, &output_cool, &setpoint_cool,TUNING_P_COOLED, TUNING_I_COOLED, TUNING_D_COOLED, DIRECT);
-PID PIDHeatedTarget(&input_heat, &output_heat, &setpoint_heat,TUNING_P_HEATED, TUNING_I_HEATED, TUNING_D_HEATED, DIRECT);
+
 
 void setup() 
 {
@@ -107,7 +100,6 @@ void setup()
 	//setup LCD display
 	LCDSetup();
 	//set TE-COOLER output pin 
-	pinMode(HEAT_PIN, OUTPUT);
 	pinMode(COOL_PIN, OUTPUT);
 	// initialize the thermocouples
 	thermoInit();  // what does this do? Do we only need it once no matter how many thermocouples there are?
@@ -121,8 +113,7 @@ void setup()
 	// 
 	blackbodies[HEATED_TARGET].setTemp = PREDEFINED_TEMP_SETPOINT_HEATED;
 	blackbodies[HEATED_TARGET].absoluteTemp = PREDEFINED_TEMP_SETPOINT_HEATED;
-	blackbodies[HEATED_TARGET].currentTemp = thermocouple_blackbody_heated.readCelsius();
-	blackbodies[HEATED_TARGET].prevTemp = thermocouple_blackbody_heated.readCelsius();
+	blackbodies[HEATED_TARGET].prevTemp = 0;
 	blackbodies[HEATED_TARGET].relativeTemp = 0;
 	blackbodies[HEATED_TARGET].error = blackbodies[HEATED_TARGET].currentTemp - blackbodies[HEATED_TARGET].setTemp;
 	// system mode initialized to absolute temperature
@@ -139,13 +130,29 @@ void setup()
 
 	// start serial
 	Serial.begin(9600);
+	Serial1.begin(9600);
+	Serial1.setTimeout(100);
 }
 
 void loop() {
 	
+	float temp;
+
     // the current temperature of the blackbody
 	blackbodies[COOLED_TARGET].currentTemp = thermocouple_blackbody_cooled.readCelsius();
-	blackbodies[HEATED_TARGET].currentTemp = thermocouple_blackbody_heated.readCelsius();
+	int iterations = 0;
+	
+	while (Serial1.available() && iterations <= 100)
+	{
+		//Serial.println("Read a value from UNO.");
+		// read string then convert it to a float
+		temp = Serial1.parseFloat();
+		if (int(temp) != 0) {
+			blackbodies[HEATED_TARGET].currentTemp = temp;
+			iterations++;
+			//Serial.println(blackbodies[HEATED_TARGET].currentTemp);
+		}
+	}
 
 	// current ambient temperature
 	int currentAmbientTemp = int(thermocouple_ambient.readCelsius());
@@ -158,6 +165,10 @@ void loop() {
 	// depending on the user input set the setpoint
 	setSetpoint(blackbodies[currentTarget].setTemp, blackbodies[currentTarget].targetTempMode, blackbodies[currentTarget].relativeTemp, currentAmbientTemp, blackbodies[currentTarget].absoluteTemp);
 	
+	// send the setpoint to the other Arduino
+	Serial1.println(blackbodies[HEATED_TARGET].setTemp);
+	Serial.println(blackbodies[HEATED_TARGET].setTemp);
+
 	// display the temperature setpoint
 	dispSetTemp(blackbodies[currentTarget].setTemp);
 
@@ -187,7 +198,8 @@ void loop() {
 	// display the PWM value
 	if (currentTarget == HEATED_TARGET)
 	{
-		disPWM(output_heat);
+		//disPWM(output_heat);
+		disPWM(-10);
 	}
 	else if (currentTarget == COOLED_TARGET)
 	{
