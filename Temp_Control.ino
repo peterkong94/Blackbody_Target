@@ -1,4 +1,4 @@
- /*    pidSetup
+/*    pidSetup
  Description:	Set the input and setpoint for the PID loop.
 				Turn the PID on. 
  Input:			thermocouple object to read the input from 
@@ -7,7 +7,7 @@
 void pidSetup()
 {
 	// set the input to the thermocouple inputted and setpoint to 0
-	input_cool = thermocouple_blackbody_cooled.readCelsius();
+	input_cool = Thermo_1.readThermocoupleTemperature();
 	setpoint_cool = PREDEFINED_TEMP_SETPOINT_COOLED;
 
 	//turn the PID on
@@ -49,10 +49,10 @@ void tempCon()
 	//int OnTimeHeat = output_heat; 
 	int OnTimeCool = output_cool;
 
-	digitalWrite(COOL_PIN, HIGH);
+	digitalWrite(T1_PWM, HIGH);
 	delay(OnTimeCool);
 	if (OnTimeCool != 255) {
-		digitalWrite(COOL_PIN, LOW);
+		digitalWrite(T1_PWM, LOW);
 		delay(255 - OnTimeCool);
 	}
 }

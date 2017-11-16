@@ -21,7 +21,6 @@
     <None Include="Temperature_Read.ino" />
     <None Include="Temp_Control.ino" />
     <None Include="Thermo_Init.ino" />
-    <None Include="User_IO.ino" />
     <None Include="User_Input.ino" />
   </ItemGroup>
   <ItemGroup>
@@ -37,12 +36,30 @@
     <ClInclude Include="user_input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Adafruit_MAX31856.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Senior\Capstone\Arduino Libraries\Adafruit_HTU21DF\Adafruit_HTU21DF\Adafruit_HTU21DF.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Adafruit_HTU21DF.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="max6675.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PID_AutoTune_v0.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Adafruit_MAX31856.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Senior\Capstone\Arduino Libraries\Adafruit_HTU21DF\Adafruit_HTU21DF\Adafruit_HTU21DF.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Adafruit_HTU21DF.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

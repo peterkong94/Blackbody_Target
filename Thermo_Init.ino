@@ -9,3 +9,4 @@ void thermoInit() {
   // wait for MAX chip to stabilize
   delay(500);
 }
+

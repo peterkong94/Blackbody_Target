@@ -1,3 +1,5 @@
+
+
 // 8 thermocouples max31856 .h and .cpp (Google MAX31856) for thermocouple temperature
 // 1 thermocouple max6675 for ambient temperature
 // SD Card (see if you could interrupt every minute to write to the SD) 
@@ -6,9 +8,12 @@
 // another PID for the cooled target
 
 //this is the main source file 
+#include <SPI.h>
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 #include <math.h>
+#include "Adafruit_HTU21DF.h"
+#include "Adafruit_MAX31856.h"
 #include "max6675.h"
 #include "PID_v1.h"
 #include "PID_AutoTune_v0.h"
@@ -17,12 +22,12 @@
 struct target
 {
 	float currentTemp;    // current temperature of the blackbody
-	float prevTemp;       // previous temperature of the blackbody
-	int setTemp;        // temperature set by the user in absolute temperature
-	int absoluteTemp;   // initialized in setup 
-	int relativeTemp;   // initialize relative temp to zero
-	int targetTempMode; // the temperature mode of the system is initiliazed to absolute temperature
-	double error;       // the difference between setpoint and current temperature
+	//float prevTemp;       // previous temperature of the blackbody
+	int setTemp;          // temperature set by the user in absolute temperature
+	int absoluteTemp;     // initialized in setup 
+	int relativeTemp;     // initialize relative temp to zero
+	int targetTempMode;   // the temperature mode of the system is initiliazed to absolute temperature
+	double error;         // the difference between setpoint and current temperature
 };
 
 // Values to increase readability
@@ -46,36 +51,44 @@ const int HEATED_TARGET = 0;
 const int COOLED_TARGET = 1;
 
 // PIN Allocation
-// Create Fritzing Pinout Diagram
 // output pins
 
-const int COOL_PIN = 10;               // output to cooling element
-
-// input temperature pins
-const int BB_TEMP_PIN = 2;             // input blackbody temp
-const int AMBIENT_TEMP_PIN = 12;       // input ambient temp
+const int T9_PWM = 5;
+const int T8_PWM = 6;
+const int T7_PWM = 7;
+const int T6_PWM = 8;
+const int T5_PWM = 9;
+const int T4_PWM = 10;
+const int T3_PWM = 11;
+const int T2_PWM = 12;
+const int T1_PWM = 13;
 
 // user input pins
-const int INCREASE_TEMP_PIN = 7;       // input to increase temperature
-const int DECREASE_TEMP_PIN = 8;       // input to decrease temperature
-const int CHANGE_MODE_PIN = 11;        // input to change temperature mode eg from absolute to relative or vice versa
-const int CHANGE_TARGET_PIN = 22;      // input to change which target we adjust the temperature of
+const int INCREASE_TEMP_PIN = 40;       // input to increase temperature
+const int DECREASE_TEMP_PIN = 41;       // input to decrease temperature
+const int CHANGE_MODE_PIN = 42;        // input to change temperature mode eg from absolute to relative or vice versa
+const int CHANGE_TARGET_PIN = 43;      // input to change which target we adjust the temperature of
 
 //setup for thermoCouple Pins Amps 
 // thermocouple pins for blackbody temperature
 
-const int THERMO_DO_BB_PIN_COOLED = 30;
-const int THERMO_CS_BB_PIN_COOLED = 31;
-const int THERMO_CLK_BB_PIN_COOLED = 32;
+//const int THERMO_DO_BB_PIN = 30;
+const int THERMO_GROUP1_SCK = 22;
+const int THERMO_GROUP1_SDO = 23;
+const int THERMO_GROUP1_SDI = 24;
+//const int THERMO_CLK_BB_PIN = 32;
 
-// thermocouple pins for ambient temperature
-const int THERMO_DO_AMB_PIN = 13;
-const int THERMO_CS_AMB_PIN = 14;
-const int THERMO_CLK_AMB_PIN = 15;
+//const int THERMO_CS_PIN_1 = 31;
+const int THERMO1_ICS = 25;
+const int THERMO2_ICS = 26;
+const int THERMO3_ICS = 27;
+const int THERMO4_ICS = 28;
 
 // Global Variables
 //Define PID Variables
 double setpoint_cool, input_cool, output_cool;
+double relative_humidity;
+double currentAmbientTemp;
 
 // current target whom data is being manipulated
 target blackbodies[2];
@@ -84,9 +97,18 @@ int currentTarget;
 // Global objects
 // LCD Display Object
 LiquidCrystal_I2C lcd(0x3F,20,4);  // set the LCD address to 0x3F for a 20 chars and 4 line display
+
+								   
 // Thermocouple Objects
-MAX6675 thermocouple_blackbody_cooled(THERMO_CLK_BB_PIN_COOLED, THERMO_CS_BB_PIN_COOLED, THERMO_DO_BB_PIN_COOLED);
-MAX6675 thermocouple_ambient(THERMO_CLK_AMB_PIN, THERMO_CS_AMB_PIN, THERMO_DO_AMB_PIN);
+//MAX6675 thermocouple_blackbody_cooled(THERMO_CLK_BB_PIN_COOLED, THERMO_CS_BB_PIN_COOLED, THERMO_DO_BB_PIN_COOLED);
+Adafruit_MAX31856 Thermo_1(THERMO1_ICS, THERMO_GROUP1_SDI, THERMO_GROUP1_SDO, THERMO_GROUP1_SCK);
+Adafruit_MAX31856 Thermo_2(THERMO2_ICS, THERMO_GROUP1_SDI, THERMO_GROUP1_SDO, THERMO_GROUP1_SCK);
+Adafruit_MAX31856 Thermo_3(THERMO3_ICS, THERMO_GROUP1_SDI, THERMO_GROUP1_SDO, THERMO_GROUP1_SCK);
+Adafruit_MAX31856 Thermo_4(THERMO4_ICS, THERMO_GROUP1_SDI, THERMO_GROUP1_SDO, THERMO_GROUP1_SCK);
+
+// Humidity Sensor Object
+Adafruit_HTU21DF Humidity_Sensor = Adafruit_HTU21DF();
+
 // Specify the links and initial tuning parameters
 // PID Object
 PID PIDCooledTarget(&input_cool, &output_cool, &setpoint_cool,TUNING_P_COOLED, TUNING_I_COOLED, TUNING_D_COOLED, DIRECT);
@@ -100,9 +122,17 @@ void setup()
 	//setup LCD display
 	LCDSetup();
 	//set TE-COOLER output pin 
-	pinMode(COOL_PIN, OUTPUT);
+	te_cooler_pin_setup();
 	// initialize the thermocouples
+	Thermo_1.setThermocoupleType(MAX31856_TCTYPE_T);
+	Thermo_2.setThermocoupleType(MAX31856_TCTYPE_T);
+	Thermo_3.setThermocoupleType(MAX31856_TCTYPE_T);
+	Thermo_4.setThermocoupleType(MAX31856_TCTYPE_T);
 	thermoInit();  // what does this do? Do we only need it once no matter how many thermocouples there are?
+
+	// set up humidity sensor
+	Humidity_Sensor.begin();
+
 	// set the input and setpoint of the PID loop
 	pidSetup();
 
@@ -113,7 +143,7 @@ void setup()
 	// 
 	blackbodies[HEATED_TARGET].setTemp = PREDEFINED_TEMP_SETPOINT_HEATED;
 	blackbodies[HEATED_TARGET].absoluteTemp = PREDEFINED_TEMP_SETPOINT_HEATED;
-	blackbodies[HEATED_TARGET].prevTemp = 0;
+	//blackbodies[HEATED_TARGET].prevTemp = 0;
 	blackbodies[HEATED_TARGET].relativeTemp = 0;
 	blackbodies[HEATED_TARGET].error = blackbodies[HEATED_TARGET].currentTemp - blackbodies[HEATED_TARGET].setTemp;
 	// system mode initialized to absolute temperature
@@ -121,8 +151,8 @@ void setup()
 
 	blackbodies[COOLED_TARGET].setTemp = PREDEFINED_TEMP_SETPOINT_COOLED;
 	blackbodies[COOLED_TARGET].absoluteTemp = PREDEFINED_TEMP_SETPOINT_COOLED;
-	blackbodies[COOLED_TARGET].currentTemp = thermocouple_blackbody_cooled.readCelsius();
-	blackbodies[COOLED_TARGET].prevTemp = thermocouple_blackbody_cooled.readCelsius();
+	blackbodies[COOLED_TARGET].currentTemp = Thermo_1.readThermocoupleTemperature();
+	//blackbodies[COOLED_TARGET].prevTemp = thermocouple_blackbody_cooled.readCelsius();
 	blackbodies[COOLED_TARGET].relativeTemp = 0;
 	blackbodies[COOLED_TARGET].error = blackbodies[COOLED_TARGET].currentTemp - blackbodies[COOLED_TARGET].setTemp;
 	// system mode initialized to absolute temperature
@@ -139,7 +169,20 @@ void loop() {
 	float temp;
 
     // the current temperature of the blackbody
-	blackbodies[COOLED_TARGET].currentTemp = thermocouple_blackbody_cooled.readCelsius();
+	blackbodies[COOLED_TARGET].currentTemp = Thermo_1.readThermocoupleTemperature();
+	currentAmbientTemp = Humidity_Sensor.readTemperature();
+	relative_humidity = Humidity_Sensor.readHumidity();
+
+	/*
+	Serial.println("The current temperature and relative humidity is:");
+	Serial.println(currentAmbientTemp);
+	Serial.println(relative_humidity);
+	Serial.println();
+	*/
+
+	// get ambient temperature and humidity
+	
+
 	int iterations = 0;
 	
 	while (Serial1.available() && iterations <= 100)
@@ -155,16 +198,37 @@ void loop() {
 	}
 
 	// current ambient temperature
-	int currentAmbientTemp = int(thermocouple_ambient.readCelsius());
-    currentAmbientTemp = 25;  // $$ for testing purposes
+	
     
 	// get the user input for the temperature
 	userInputLoopTargetChange(currentTarget);
 	userInputLoop(blackbodies[currentTarget].targetTempMode, blackbodies[currentTarget].relativeTemp, blackbodies[currentTarget].absoluteTemp); // values are passed by reference and modified
 	
+	/*
+	Serial.println();
+	Serial.println(blackbodies[HEATED_TARGET].setTemp);
+	Serial.println(blackbodies[HEATED_TARGET].absoluteTemp);
+	Serial.println(blackbodies[HEATED_TARGET].relativeTemp);
+	Serial.println(currentAmbientTemp);	
+	Serial.println();
+	*/
+
 	// depending on the user input set the setpoint
-	setSetpoint(blackbodies[currentTarget].setTemp, blackbodies[currentTarget].targetTempMode, blackbodies[currentTarget].relativeTemp, currentAmbientTemp, blackbodies[currentTarget].absoluteTemp);
-	
+	setSetpoint(blackbodies[COOLED_TARGET].setTemp, blackbodies[COOLED_TARGET].targetTempMode, blackbodies[COOLED_TARGET].relativeTemp, currentAmbientTemp, blackbodies[COOLED_TARGET].absoluteTemp);
+	setSetpoint(blackbodies[HEATED_TARGET].setTemp, blackbodies[HEATED_TARGET].targetTempMode, blackbodies[HEATED_TARGET].relativeTemp, currentAmbientTemp, blackbodies[HEATED_TARGET].absoluteTemp);
+
+	// check dew point and make sure the setpoints don't go below the dew point. 
+
+	/*
+	Serial.println();
+	Serial.println(currentAmbientTemp);
+	Serial.println(relative_humidity);
+	Serial.println(calculateDewPoint());
+	Serial.println();
+	*/
+
+	setpointDewPoint();
+
 	// send the setpoint to the other Arduino
 	Serial1.println(blackbodies[HEATED_TARGET].setTemp);
 	Serial.println(blackbodies[HEATED_TARGET].setTemp);
@@ -189,8 +253,8 @@ void loop() {
 	dispError(blackbodies[currentTarget].error); 
   
 	// for averaging from last loop to reduce spikes, could be elimiated 
-	blackbodies[COOLED_TARGET].prevTemp = blackbodies[COOLED_TARGET].currentTemp;
-	blackbodies[HEATED_TARGET].prevTemp = blackbodies[HEATED_TARGET].currentTemp;
+	//blackbodies[COOLED_TARGET].prevTemp = blackbodies[COOLED_TARGET].currentTemp;
+	//blackbodies[HEATED_TARGET].prevTemp = blackbodies[HEATED_TARGET].currentTemp;
 
 	// output the heating and cooling elements
 	tempCon(); 
@@ -199,7 +263,7 @@ void loop() {
 	if (currentTarget == HEATED_TARGET)
 	{
 		//disPWM(output_heat);
-		disPWM(-10);
+		disPWM(-10); // the output of the PID is at the UNO controller
 	}
 	else if (currentTarget == COOLED_TARGET)
 	{

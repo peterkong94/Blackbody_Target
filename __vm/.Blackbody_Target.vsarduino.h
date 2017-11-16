@@ -81,7 +81,6 @@ typedef void *__builtin_va_list;
 #include "Temp_Control.ino"
 #include "Temperature_Read.ino"
 #include "Thermo_Init.ino"
-#include "User_IO.ino"
 #include "User_Input.ino"
 #endif
 #endif

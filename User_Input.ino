@@ -161,6 +161,8 @@ void setSetpoint(int& setTemp, int tempMode, int relTemp, int curAmbTemp, int ab
 		Serial.println("Error! Incorrect Temperature Mode");
 	}
 
+	
+
 }
 
 /*   userInputLoopTargetChange
@@ -193,5 +195,36 @@ void userInputLoopTargetChange(int& original_target)
 		{
 			original_target = ERROR_MD;
 		}
+	}
+}
+
+/*   calculateDewPoint
+Description:	Calculates the dew point with the current temperature and relative humidity
+Input:			none (current temperature and relative humidity are global)
+Output:			the dew point
+*/
+
+double calculateDewPoint()
+{
+	double numerator = 243.04 * (log(relative_humidity / 100) + 17.625 * (currentAmbientTemp / (currentAmbientTemp + 243.04)));
+	double denominator = 17.625 - log(relative_humidity / 100) - 17.625 * (currentAmbientTemp / (currentAmbientTemp + 243.04));
+	return (numerator / denominator);
+}
+
+
+/*   setpointDewPoint
+Description:	Calculates the dew point with the current temperature and relative humidity
+Input:			none (current temperature and relative humidity are global)
+Output:			the dew point
+*/
+double setpointDewPoint()
+{
+	int dewpoint = calculateDewPoint();
+	int difference = blackbodies[COOLED_TARGET].setTemp - dewpoint;
+
+	if (difference <= 0)
+	{
+		blackbodies[COOLED_TARGET].setTemp = dewpoint + 1;
+		blackbodies[HEATED_TARGET].setTemp = blackbodies[HEATED_TARGET].setTemp + (-1 * difference) + 1;
 	}
 }
