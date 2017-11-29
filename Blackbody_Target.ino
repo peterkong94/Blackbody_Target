@@ -1,5 +1,3 @@
-
-
 // 8 thermocouples max31856 .h and .cpp (Google MAX31856) for thermocouple temperature
 // 1 thermocouple max6675 for ambient temperature
 // SD Card (see if you could interrupt every minute to write to the SD) 
@@ -8,6 +6,7 @@
 // another PID for the cooled target
 
 //this is the main source file 
+#include <SD.h>
 #include <SPI.h>
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
@@ -17,12 +16,12 @@
 #include "max6675.h"
 #include "PID_v1.h"
 #include "PID_AutoTune_v0.h"
+#include "SimpleTimer.h"
 
 // structure defining the data for a target
 struct target
 {
 	float currentTemp;    // current temperature of the blackbody
-	//float prevTemp;       // previous temperature of the blackbody
 	int setTemp;          // temperature set by the user in absolute temperature
 	int absoluteTemp;     // initialized in setup 
 	int relativeTemp;     // initialize relative temp to zero
@@ -72,17 +71,17 @@ const int CHANGE_TARGET_PIN = 43;      // input to change which target we adjust
 //setup for thermoCouple Pins Amps 
 // thermocouple pins for blackbody temperature
 
-//const int THERMO_DO_BB_PIN = 30;
 const int THERMO_GROUP1_SCK = 22;
 const int THERMO_GROUP1_SDO = 23;
 const int THERMO_GROUP1_SDI = 24;
-//const int THERMO_CLK_BB_PIN = 32;
 
-//const int THERMO_CS_PIN_1 = 31;
 const int THERMO1_ICS = 25;
 const int THERMO2_ICS = 26;
 const int THERMO3_ICS = 27;
 const int THERMO4_ICS = 28;
+
+// SD card pin
+const int SD_CARD_OUT = 53;
 
 // Global Variables
 //Define PID Variables
@@ -100,7 +99,6 @@ LiquidCrystal_I2C lcd(0x3F,20,4);  // set the LCD address to 0x3F for a 20 chars
 
 								   
 // Thermocouple Objects
-//MAX6675 thermocouple_blackbody_cooled(THERMO_CLK_BB_PIN_COOLED, THERMO_CS_BB_PIN_COOLED, THERMO_DO_BB_PIN_COOLED);
 Adafruit_MAX31856 Thermo_1(THERMO1_ICS, THERMO_GROUP1_SDI, THERMO_GROUP1_SDO, THERMO_GROUP1_SCK);
 Adafruit_MAX31856 Thermo_2(THERMO2_ICS, THERMO_GROUP1_SDI, THERMO_GROUP1_SDO, THERMO_GROUP1_SCK);
 Adafruit_MAX31856 Thermo_3(THERMO3_ICS, THERMO_GROUP1_SDI, THERMO_GROUP1_SDO, THERMO_GROUP1_SCK);
@@ -113,6 +111,11 @@ Adafruit_HTU21DF Humidity_Sensor = Adafruit_HTU21DF();
 // PID Object
 PID PIDCooledTarget(&input_cool, &output_cool, &setpoint_cool,TUNING_P_COOLED, TUNING_I_COOLED, TUNING_D_COOLED, DIRECT);
 
+// file to be written to on the SD card
+File sdFile;
+
+// timer for the datalogging/SD card writes
+SimpleTimer timer;
 
 void setup() 
 {
@@ -123,12 +126,21 @@ void setup()
 	LCDSetup();
 	//set TE-COOLER output pin 
 	te_cooler_pin_setup();
+
+	/*
+	Thermo_1.begin();
+	Thermo_2.begin();
+	Thermo_3.begin();
+	Thermo_4.begin();
+	*/
+
 	// initialize the thermocouples
 	Thermo_1.setThermocoupleType(MAX31856_TCTYPE_T);
 	Thermo_2.setThermocoupleType(MAX31856_TCTYPE_T);
 	Thermo_3.setThermocoupleType(MAX31856_TCTYPE_T);
 	Thermo_4.setThermocoupleType(MAX31856_TCTYPE_T);
-	thermoInit();  // what does this do? Do we only need it once no matter how many thermocouples there are?
+	
+	//thermoInit();  // what does this do? Do we only need it once no matter how many thermocouples there are?
 
 	// set up humidity sensor
 	Humidity_Sensor.begin();
@@ -143,7 +155,6 @@ void setup()
 	// 
 	blackbodies[HEATED_TARGET].setTemp = PREDEFINED_TEMP_SETPOINT_HEATED;
 	blackbodies[HEATED_TARGET].absoluteTemp = PREDEFINED_TEMP_SETPOINT_HEATED;
-	//blackbodies[HEATED_TARGET].prevTemp = 0;
 	blackbodies[HEATED_TARGET].relativeTemp = 0;
 	blackbodies[HEATED_TARGET].error = blackbodies[HEATED_TARGET].currentTemp - blackbodies[HEATED_TARGET].setTemp;
 	// system mode initialized to absolute temperature
@@ -152,7 +163,6 @@ void setup()
 	blackbodies[COOLED_TARGET].setTemp = PREDEFINED_TEMP_SETPOINT_COOLED;
 	blackbodies[COOLED_TARGET].absoluteTemp = PREDEFINED_TEMP_SETPOINT_COOLED;
 	blackbodies[COOLED_TARGET].currentTemp = Thermo_1.readThermocoupleTemperature();
-	//blackbodies[COOLED_TARGET].prevTemp = thermocouple_blackbody_cooled.readCelsius();
 	blackbodies[COOLED_TARGET].relativeTemp = 0;
 	blackbodies[COOLED_TARGET].error = blackbodies[COOLED_TARGET].currentTemp - blackbodies[COOLED_TARGET].setTemp;
 	// system mode initialized to absolute temperature
@@ -162,6 +172,16 @@ void setup()
 	Serial.begin(9600);
 	Serial1.begin(9600);
 	Serial1.setTimeout(100);
+
+	// assign the pin for the SD card and start up the SD board
+	//pinMode(SD_CARD_OUT, OUTPUT);
+	Serial.println("Initalize SD Card");
+	Serial.println(SD.begin(SD_CARD_OUT));
+	Serial.println();
+
+	// tell the code to run this function every minute
+	timer.setInterval(60000, log_data);
+
 }
 
 void loop() {
@@ -169,64 +189,48 @@ void loop() {
 	float temp;
 
     // the current temperature of the blackbody
-	blackbodies[COOLED_TARGET].currentTemp = Thermo_1.readThermocoupleTemperature();
-	currentAmbientTemp = Humidity_Sensor.readTemperature();
-	relative_humidity = Humidity_Sensor.readHumidity();
-
-	/*
-	Serial.println("The current temperature and relative humidity is:");
-	Serial.println(currentAmbientTemp);
-	Serial.println(relative_humidity);
-	Serial.println();
-	*/
-
 	// get ambient temperature and humidity
-	
+	blackbodies[COOLED_TARGET].currentTemp = Thermo_1.readThermocoupleTemperature();
+	Serial.println("Running1");
+	currentAmbientTemp = Humidity_Sensor.readTemperature();
+	Serial.println("Running2");
+	relative_humidity = Humidity_Sensor.readHumidity();		
+
+	Serial.println("Running3");
+
+	timer.run();
+
+	Serial.println("Running");
 
 	int iterations = 0;
 	
 	while (Serial1.available() && iterations <= 100)
 	{
-		//Serial.println("Read a value from UNO.");
-		// read string then convert it to a float
 		temp = Serial1.parseFloat();
 		if (int(temp) != 0) {
 			blackbodies[HEATED_TARGET].currentTemp = temp;
 			iterations++;
-			//Serial.println(blackbodies[HEATED_TARGET].currentTemp);
 		}
 	}
 
 	// current ambient temperature
 	
-    
+	/*
+	Serial.println("The current temperatures are:");
+	Serial.println(blackbodies[HEATED_TARGET].currentTemp);
+	Serial.println(blackbodies[COOLED_TARGET].currentTemp);
+	Serial.println();
+	*/
+
 	// get the user input for the temperature
 	userInputLoopTargetChange(currentTarget);
 	userInputLoop(blackbodies[currentTarget].targetTempMode, blackbodies[currentTarget].relativeTemp, blackbodies[currentTarget].absoluteTemp); // values are passed by reference and modified
 	
-	/*
-	Serial.println();
-	Serial.println(blackbodies[HEATED_TARGET].setTemp);
-	Serial.println(blackbodies[HEATED_TARGET].absoluteTemp);
-	Serial.println(blackbodies[HEATED_TARGET].relativeTemp);
-	Serial.println(currentAmbientTemp);	
-	Serial.println();
-	*/
-
 	// depending on the user input set the setpoint
 	setSetpoint(blackbodies[COOLED_TARGET].setTemp, blackbodies[COOLED_TARGET].targetTempMode, blackbodies[COOLED_TARGET].relativeTemp, currentAmbientTemp, blackbodies[COOLED_TARGET].absoluteTemp);
 	setSetpoint(blackbodies[HEATED_TARGET].setTemp, blackbodies[HEATED_TARGET].targetTempMode, blackbodies[HEATED_TARGET].relativeTemp, currentAmbientTemp, blackbodies[HEATED_TARGET].absoluteTemp);
 
 	// check dew point and make sure the setpoints don't go below the dew point. 
-
-	/*
-	Serial.println();
-	Serial.println(currentAmbientTemp);
-	Serial.println(relative_humidity);
-	Serial.println(calculateDewPoint());
-	Serial.println();
-	*/
-
 	setpointDewPoint();
 
 	// send the setpoint to the other Arduino
@@ -235,9 +239,7 @@ void loop() {
 
 	// display the temperature setpoint
 	dispSetTemp(blackbodies[currentTarget].setTemp);
-
-	//Serial.println(thermocouple.readCelsius());
-	  
+  
 	delay(500); 
 
 	// display the current blackbody temp
@@ -252,10 +254,6 @@ void loop() {
 	blackbodies[HEATED_TARGET].error = blackbodies[HEATED_TARGET].currentTemp - blackbodies[HEATED_TARGET].setTemp;
 	dispError(blackbodies[currentTarget].error); 
   
-	// for averaging from last loop to reduce spikes, could be elimiated 
-	//blackbodies[COOLED_TARGET].prevTemp = blackbodies[COOLED_TARGET].currentTemp;
-	//blackbodies[HEATED_TARGET].prevTemp = blackbodies[HEATED_TARGET].currentTemp;
-
 	// output the heating and cooling elements
 	tempCon(); 
 	
