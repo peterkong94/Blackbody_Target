@@ -10,11 +10,11 @@ void LCDSetup()
 	// turn on the backlight
 	lcd.backlight();
 	// Print a message to the LCD.
-	lcd.print("current temp: ");
+	lcd.print("Target: ");
 	// set up the LCD's number of columns and rows:
-	lcd.setCursor(0, 2);
+	lcd.setCursor(0, 1);
 	// Print a message to the LCD.
-	lcd.print("set temp: ");
+	lcd.print("Set Pt: ");
 }
 
 
@@ -27,7 +27,7 @@ Output:			none
 void dispCurrentTemp(double currentTemp)
 {
   // (note: line 1 is the second row, since counting begins with 0):
-  lcd.setCursor(0, 1);
+  lcd.setCursor(10, 0);
   // print the number of seconds since reset:
   lcd.print(currentTemp);
 }
@@ -40,49 +40,78 @@ Output:			none
 */
 void dispSetTemp(double setTemp)
 {
-  lcd.setCursor(0, 3);
+  lcd.setCursor(10, 1);
   lcd.print(setTemp);
 }
 
-/*    dispError
-Description:	Display to the error field of the LCD
-Input:			error -> value displayed to LCD
+/*    dispRelativity
+Description:	Display to the temperature mode 
+Input:			none
 Output:			none
 */
-void dispError(double error)
+void dispRelativity()
 {
   //this is to clear the previous printed value to prevent overlap
-  lcd.setCursor(13, 3);
-  lcd.print("     ");
-  lcd.setCursor(7, 1);
-  lcd.print("Err: ");
-  lcd.setCursor(13, 1);
-  lcd.print(error);
+  lcd.setCursor(17, 0);
+  
+  if (blackbodies[currentTarget].targetTempMode  == REL_TEMP)
+  {
+	  lcd.print("REL");
+  }
+  else if (blackbodies[currentTarget].targetTempMode == ABS_TEMP)
+  {
+	  lcd.print("ABS");
+  }
+  else
+  {
+	  lcd.print("ERR");
+  }
 }
 
-//the PWM is the control signal to the TE-COOLER driver
-/*    dispPWM
-Description:	PWM is the control signal to the TE-Cooler driver.
-				Display a value to the PWM field of the LCD
-Input:			controlS -> value displayed to LCD
-Output:			none
-*/
-void disPWM(int controlS)
+void dispTarget()
 {
-    lcd.setCursor(7, 3);
-    lcd.print("PMW: ");
-    lcd.setCursor(13, 3);
-    lcd.print(controlS);
-  /*if(controlS > 0){ 
-    lcd.setCursor(5, 3);
-    lcd.print("PMW: -");
-    lcd.setCursor(11, 3);
-    lcd.print(controlS);
-  }else{ 
-    controlS *= -1;
-    lcd.setCursor(5, 3);
-    lcd.print("PMW: +");
-    lcd.setCursor(11, 3);
-    lcd.print(controlS);
-  }*/
+	lcd.setCursor(7, 0);
+	if (currentTarget == HEATED_TARGET)
+	{
+		lcd.print("H");
+	}
+	else
+	{
+		lcd.print("C");
+	}	
 }
+
+void dispPlus_Minus()
+{
+	lcd.setCursor(0, 3);
+	if (blackbodies[currentTarget].targetTempMode == REL_TEMP)
+	{
+		lcd.print("+/-:");
+		lcd.print("   ");
+		lcd.setCursor(4, 3);
+		lcd.print(blackbodies[currentTarget].relativeTemp);
+	}
+	else
+	{
+		lcd.print("        ");
+	}
+}
+
+void dispAmbTemp()
+{
+	lcd.setCursor(0, 2);
+	lcd.print("Amb Temp:");
+	lcd.setCursor(10, 2);
+	lcd.print(currentAmbientTemp);
+
+}
+
+void dispHumidity()
+{
+	lcd.setCursor(11, 3);
+	lcd.print("Hum:");
+	lcd.print(relative_humidity);
+
+}
+
+

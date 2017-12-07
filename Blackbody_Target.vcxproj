@@ -78,6 +78,9 @@
     <None Include="Blackbody_Target.ino">
       <FileType>CppCode</FileType>
     </None>
+    <None Include="Indicator_Control.ino">
+      <FileType>CppCode</FileType>
+    </None>
     <None Include="LCD_Control.ino">
       <FileType>CppCode</FileType>
     </None>

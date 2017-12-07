@@ -15,20 +15,26 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Heated_Target_PID.ino" />
-    <None Include="Thermo_Init.ino" />
+    <None Include="Heated_Target_PID_Nano.ino" />
     <None Include="Heat_Temp_Control.ino" />
+    <None Include="Thermo_Init.ino" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="__vm\.Heated_Target_PID.vsarduino.h">
+    <ClInclude Include="__vm\.Heated_Target_PID_Nano.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="max6675.h">
+    <ClInclude Include="..\..\Adafruit_MAX31856.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Adafruit_MAX31856.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="max6675.cpp">
+    <ClCompile Include="..\..\Adafruit_MAX31856.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Adafruit_MAX31856.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

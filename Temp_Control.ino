@@ -13,8 +13,37 @@ void pidSetup()
 	//turn the PID on
 	PIDCooledTarget.SetMode(AUTOMATIC);
 
+	// set the direction of the pid
+	setPIDDirection();
+
 	// start serial
 	Serial.begin(9600);
+}
+
+/*    te_cooler_pin_setup()
+Description:	Sets the pin mode for the te coolers
+Input:			none
+Output:			none
+*/
+void te_cooler_pin_setup()
+{
+	pinMode(T1_PWM, OUTPUT);
+	pinMode(T2_PWM, OUTPUT);
+	pinMode(T3_PWM, OUTPUT);
+	pinMode(T4_PWM, OUTPUT);
+	pinMode(T5_PWM, OUTPUT);
+	pinMode(T6_PWM, OUTPUT);
+	pinMode(T7_PWM, OUTPUT);
+	pinMode(T8_PWM, OUTPUT);
+	pinMode(T9_PWM, OUTPUT);
+
+	// set the mode for the direction pins
+	pinMode(T1_DIRECTION, OUTPUT);
+	pinMode(T1_2_DIRECTION, OUTPUT);
+	pinMode(T3_4_DIRECTION, OUTPUT);
+	pinMode(T5_6_DIRECTION, OUTPUT);
+	pinMode(T7_8_DIRECTION, OUTPUT);
+	pinMode(T9_DIRECTION, OUTPUT);
 }
 
 /*    pidCalc
@@ -45,8 +74,19 @@ Output:			none
 */
 void tempCon()
 {
+ 
+	// output pwm to the controller
+	analogWrite(T1_PWM, output_cool);
+	analogWrite(T2_PWM, output_cool);
+	analogWrite(T3_PWM, output_cool);
+	analogWrite(T4_PWM, output_cool);
+	analogWrite(T5_PWM, output_cool);
+	analogWrite(T6_PWM, output_cool);
+	analogWrite(T7_PWM, output_cool);
+	analogWrite(T8_PWM, output_cool);
+	analogWrite(T9_PWM, output_cool);
 
-	//int OnTimeHeat = output_heat; 
+	/*
 	int OnTimeCool = output_cool;
 
 	digitalWrite(T1_PWM, HIGH);
@@ -54,6 +94,46 @@ void tempCon()
 	if (OnTimeCool != 255) {
 		digitalWrite(T1_PWM, LOW);
 		delay(255 - OnTimeCool);
+	}
+	*/
+}
+
+/*  setPIDDirection
+Description:	According to the setpoint and the ambient temperature set the
+				direction of the PID.
+Input:			none
+Output:			none
+*/
+void setPIDDirection()
+{
+	// if the ambient temperature is high than the set temp
+	// the target needs to be cooled
+	if (blackbodies[COOLED_TARGET].setTemp < currentAmbientTemp)
+	{
+		// pid will calculate in order to cool
+		PIDCooledTarget.SetControllerDirection(REVERSE);
+
+		// te coolers are set to cool
+		digitalWrite(T1_DIRECTION, COOL_TE_COOLERS);
+		digitalWrite(T1_2_DIRECTION, COOL_TE_COOLERS);
+		digitalWrite(T3_4_DIRECTION, COOL_TE_COOLERS);
+		digitalWrite(T5_6_DIRECTION, COOL_TE_COOLERS);
+		digitalWrite(T7_8_DIRECTION, COOL_TE_COOLERS);
+		digitalWrite(T9_DIRECTION, COOL_TE_COOLERS);
+
+	}
+	else  // the target needs to be heated
+	{
+		// pid will calculate in order to heat the target
+		PIDCooledTarget.SetControllerDirection(DIRECT);
+
+		// te coolers direction set to heat
+		digitalWrite(T1_DIRECTION, HEAT_TE_COOLERS);
+		digitalWrite(T1_2_DIRECTION, HEAT_TE_COOLERS);
+		digitalWrite(T3_4_DIRECTION, HEAT_TE_COOLERS);
+		digitalWrite(T5_6_DIRECTION, HEAT_TE_COOLERS);
+		digitalWrite(T7_8_DIRECTION, HEAT_TE_COOLERS);
+		digitalWrite(T9_DIRECTION, HEAT_TE_COOLERS);
 	}
 }
 

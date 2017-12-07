@@ -22,6 +22,7 @@
     <None Include="Temp_Control.ino" />
     <None Include="Thermo_Init.ino" />
     <None Include="User_Input.ino" />
+    <None Include="Indicator_Control.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.Blackbody_Target.vsarduino.h">
